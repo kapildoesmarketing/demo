@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Feud</title>
+    <title>Fun Facts Feud</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -165,8 +165,8 @@
     </main>
     
     <!-- Audio elements -->
-    <audio id="rightSound" src="right.mp3" preload="auto"></audio>
-    <audio id="wrongSound" src="wrong.mp3" preload="auto"></audio>
+    <audio id="rightSound" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" preload="auto"></audio>
+    <audio id="wrongSound" src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-bass-buzzer-948.mp3" preload="auto"></audio>
 
 <script>
     // --- GAME STATE ---
@@ -182,24 +182,24 @@
 
     // --- STATIC DATA ---
     const teams = [
-        { name: 'Pixel Patriots', logoUrl: 'https://kapildoesmarketing.github.io/familyfeud/1.png' },
-        { name: 'Impression Invaders', logoUrl: 'https://kapildoesmarketing.github.io/familyfeud/2.png' },
-        { name: 'Xtreme Optimizers', logoUrl: 'https://kapildoesmarketing.github.io/familyfeud/3.png' },
-        { name: 'Engagement Experts', logoUrl: 'https://kapildoesmarketing.github.io/familyfeud/5.png' },
-        { name: 'Lead Legends', logoUrl: 'https://kapildoesmarketing.github.io/familyfeud/4.png' }
+        { name: 'Team Cats', logoUrl: 'https://kapildoesmarketing.github.io/demo/cat.png' },
+        { name: 'Team Dogs', logoUrl: 'https://kapildoesmarketing.github.io/demo/dog.png' },
+        { name: 'Team Piegon', logoUrl: 'https://kapildoesmarketing.github.io/demo/piegon.png' },
+        { name: 'Team Rabbit', logoUrl: 'https://kapildoesmarketing.github.io/demo/rabbit.png' },
+        { name: 'Team Tortoise', logoUrl: 'https://kapildoesmarketing.github.io/demo/tortoise.png' }
     ];
 
     const feudQuestions = [
-        { question: "What signals does broad match consider?", answers: [{ text: "Current Keyword" }, { text: "Landing Pages" }, { text: "Other Keywords in the ad group" }, { text: "Previous User Searches" }, { text: "Predicted Performance" }, { text: "User Location" }] },
-        { question: "Which tools help find keywords for an advertiser?", answers: [{ text: "CBX // Top Terms Report" }, { text: "KW Refinery" }, { text: "KW Planner" }, { text: "Answer the Public" }, { text: "Pmax Insights - Max Magic Tool" }, { text: "Optiscore Reccos" }, { text: "Keywave" }] },
-        { question: "What are best practices for implementing broad match?", answers: [{ text: "Use Smart Bidding" }, { text: "Add Negative Keywords" }, { text: "Add duplicate keywords in BM version" }, { text: "Test & Implement - Drafts & Experiments" }, { text: "Not Budget Constrained" }, { text: "Use UTM tracking for lead quality" }] },
-        { question: "What are the important components / features of AI Max?", answers: [{ text: "Keywordless matching / Search Term matching" }, { text: "Automatically created assets" }, { text: "URL Expansion" }, { text: "Location Targeting at ad group level" }, { text: "Robust & Transparent Reporting" }] },
-        { question: "What are some new Search & Pmax features?", answers: [{ text: "Ads Opportunities / User Searches" }, { text: "AI Overview" }, { text: "AI Mode" }, { text: "Search Smart Bidding Exploration" }, { text: "Retention Goals on Pmax" }, { text: "Age & Gender Exclusion" }, { text: "Channel Reporting" }, { text: "iOS targeting" }, { text: "OS / Device Exclusion" }, { text: "First Party Audience Exclusion" }, { text: "Pmax Search Terms Reporting" }, { text: "Flighted Budgets in Pmax" }] },
-        { question: "What benchmarks show search competition?", answers: [{ text: "Impression Share / Ad Rank" }, { text: "Clickthrough Rates" }, { text: "Cost Per Click" }, { text: "Click Share" }, { text: "Peer Set average spend" }, { text: "Auction Insights" }] },
-        { question: "How can we improve search impression share?", answers: [{ text: "Unconstrained Bids" }, { text: "Unconstrained budgets" }, { text: "Improve CTR" }, { text: "Improve Landing Page experience" }, { text: "Improve ad relevance" }, { text: "Refine / Add Negative Keywords" }, { text: "Asset Quality / Ad strength" }] },
-        { question: "What signals does Gboost consider? What campaigns are eligible?", answers: [{ text: "Overpacing Campaign" }, { text: "Campaign performance" }, { text: "Search" }, { text: "Pmax" }, { text: "Shopping" }, { text: "App" }] },
-        { question: "How to improve lead quality?", answers: [{ text: "Search Term / Keyword Audit" }, { text: "Landing Page Audit" }, { text: "UTM Tracking" }, { text: "Lead Scoring" }, { text: "QVT" }, { text: "EC4L / OCI" }, { text: "Network Serving (Search Partners)" }, { text: "Bid Restrictions" }, { text: "Ad Audit" }] },
-        { question: "What are the highlights in new search metrics?", answers: [{ text: "Queries are deprecated" }, { text: "Ads Opportunities" }, { text: "User Searches" }, { text: "User Searches are indexed" }, { text: "Text + Shopping is 1 Ad opportunity" }, { text: "AI Overview is 1 Ad opportunity" }, { text: "AI Mode is 1 ad opportunity" }] }
+        { question: "Name a planet in our solar system.", answers: [{ text: "Mars" }, { text: "Jupiter" }, { text: "Earth" }, { text: "Venus" }, { text: "Saturn" }, { text: "Mercury" }] },
+        { question: "Name something you might find in a pirate's treasure chest.", answers: [{ text: "Gold Coins" }, { text: "Jewels & Gems" }, { text: "A Treasure Map" }, { text: "A Skull" }, { text: "A Bottle of Rum" }, { text: "A Sword or Dagger" }] },
+        { question: "Name a popular pizza topping.", answers: [{ text: "Pepperoni" }, { text: "Mushrooms" }, { text: "Extra Cheese" }, { text: "Sausage" }, { text: "Onions" }, { text: "Bacon" }] },
+        { question: "Name a famous landmark in Paris.", answers: [{ text: "Eiffel Tower" }, { text: "Louvre Museum" }, { text: "Arc de Triomphe" }, { text: "Notre-Dame" }, { text: "Moulin Rouge" }, { text: "Sacré-Cœur" }] },
+        { question: "Name a common household pet.", answers: [{ text: "Dog" }, { text: "Cat" }, { text: "Fish" }, { text: "Hamster/Gerbil" }, { text: "Bird" }, { text: "Rabbit" }] },
+        { question: "Name an animal that lives in the ocean.", answers: [{ text: "Whale" }, { text: "Dolphin" }, { text: "Shark" }, { text: "Fish" }, { text: "Octopus" }, { text: "Jellyfish" }] },
+        { question: "Name a color of the rainbow.", answers: [{ text: "Red" }, { text: "Green" }, { text: "Blue" }, { text: "Yellow" }, { text: "Orange" }, { text: "Purple/Violet" }] },
+        { question: "What's something you take on a camping trip?", answers: [{ text: "Tent" }, { text: "Sleeping Bag" }, { text: "Flashlight" }, { text: "Food / Cooler" }, { text: "Insect Repellent" }, { text: "Matches / Lighter" }] },
+        { question: "Name a famous painting.", answers: [{ text: "Mona Lisa" }, { text: "The Starry Night" }, { text: "The Scream" }, { text: "The Last Supper" }, { text: "Guernica" }, { text: "Girl with a Pearl Earring" }] },
+        { question: "Name a country famous for its cuisine.", answers: [{ text: "Italy" }, { text: "France" }, { text: "Mexico" }, { text: "China" }, { text: "India" }, { text: "Japan" }] }
     ];
 
     // --- DOM ELEMENTS CACHING ---
@@ -235,7 +235,7 @@
             teamCard.className = `card p-2 transition-all duration-300 ${isActive ? 'ring-4 ring-blue-400' : ''}`;
             teamCard.innerHTML = `
                 <div class="flex items-center gap-2 w-full">
-                    <img src="${team.logoUrl}" alt="${team.name} Logo" class="w-8 h-8 object-contain" onerror="this.src='https://placehold.co/40x40/E8EAED/3c4043?text=G'">
+                    <img src="${team.logoUrl}" alt="${team.name} Logo" class="w-8 h-8 rounded-full object-cover" onerror="this.src='https://placehold.co/40x40/E8EAED/3c4043?text=G'">
                     <div class="flex-grow">
                         <p class="text-sm font-bold">${team.name}</p>
                         <p class="score-display-${index} text-xl font-bold text-green-600 transition-colors duration-300">${score}</p>
@@ -288,10 +288,10 @@
 
     function showStartScreen() {
         gameState = 'IDLE';
-        updateDisplay(questionDisplayCard, `<h2 class="text-3xl font-bold">Family Feud</h2>`);
+        updateDisplay(questionDisplayCard, `<h2 class="text-3xl font-bold">Fun Facts Feud</h2>`);
         const startHTML = `
             <div class="text-center h-full flex flex-col items-center justify-center">
-                <p class="text-lg text-gray-500 mt-2">Get ready for the challenge!</p>
+                <p class="text-lg text-gray-500 mt-2">Get ready for a battle of wits!</p>
                 <button id="startGameBtn" class="mt-4 bg-blue-600 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 btn-press">
                     Start Game
                 </button>
@@ -348,7 +348,7 @@
         } else {
             currentTeamIndex = (currentTeamIndex + 1) % teams.length;
             updateActiveTeamUI();
-            startTimer(15);
+            startTimer(20);
         }
     }
 
@@ -367,7 +367,7 @@
             <div class="flex justify-center flex-wrap gap-2 mt-2">`;
         
         teams.forEach((team, index) => {
-            stealHTML += `<button onclick="attemptSteal(${index})" class="p-2 bg-gray-200 rounded-lg btn-press"><img src="${team.logoUrl}" class="w-10 h-10"></button>`;
+            stealHTML += `<button onclick="attemptSteal(${index})" class="p-2 bg-gray-200 rounded-lg btn-press"><img src="${team.logoUrl}" class="w-10 h-10 rounded-full"></button>`;
         });
 
         stealHTML += `</div><button onclick="noSteal()" class="mt-4 w-full bg-yellow-500 text-white font-bold py-3 rounded-lg text-lg btn-press">No Steal</button></div>`;
@@ -450,7 +450,7 @@
 
         setTimeout(() => {
             nextRound();
-        }, revealTime); 
+        }, revealTime + 1000); // Add a little extra delay
     }
 
     function nextRound() {
@@ -541,7 +541,7 @@
         
         renderAnswerBoard();
         updateActiveTeamUI();
-        startTimer(15);
+        startTimer(30);
     }
     
     // --- TIMER FUNCTIONS ---
@@ -578,4 +578,3 @@
 </script>
 </body>
 </html>
-```
