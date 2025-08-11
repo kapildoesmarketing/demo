@@ -1,1 +1,703 @@
-<h1>pending</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fun Facts Jeopardy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Google Sans', 'Roboto', sans-serif;
+            background-color: #F1F3F4;
+            color: #3c4043;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 1rem;
+            border: 1px solid #DADCE0;
+            padding: 0.75rem;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.302), 0 2px 6px 2px rgba(60,64,67,0.149);
+        }
+
+        .team-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem; 
+        }
+        
+        .question-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+        }
+
+        .question-number {
+            background-color: #E8EAED;
+            color: #3c4043;
+            text-align: center;
+            padding: 0.5rem;
+            border-radius: 1rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1 / 1;
+            /* Animation properties */
+            opacity: 0;
+            transform: scale(0.5);
+            animation: pop-in 0.5s ease-out forwards;
+        }
+        
+        .question-number.answered {
+            background-color: #F8F9FA;
+            color: #BDBDBD;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+        
+        .question-number:hover:not(.answered) {
+            background-color: #DADCE0;
+        }
+
+        /* --- New styles for hard questions --- */
+        .question-number.hard-question:not(.answered) {
+            background-color: #FCE4EC; /* Light Pink */
+            color: #880E4F; /* Dark Pink */
+            border: 1px solid #F48FB1;
+        }
+
+        .question-number.hard-question:hover:not(.answered) {
+            background-color: #F8BBD0;
+        }
+        
+        /* Keyframe Animations */
+        @keyframes pop-in {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes content-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes score-increase-anim {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); color: #10B981; } /* Bright Green */
+            100% { transform: scale(1); }
+        }
+
+        @keyframes score-decrease-anim {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); color: #EF4444; } /* Bright Red */
+            100% { transform: scale(1); }
+        }
+
+        .content-fade-in {
+            animation: content-fade-in 0.4s ease-out;
+        }
+
+        .score-increase {
+            animation: score-increase-anim 0.6s ease-in-out;
+        }
+        
+        .score-decrease {
+            animation: score-decrease-anim 0.6s ease-in-out;
+        }
+        
+        .btn-press {
+             transition: transform 0.1s ease, filter 0.1s ease;
+        }
+
+        .btn-press:active {
+            transform: scale(0.95);
+            filter: brightness(0.9);
+        }
+
+    </style>
+</head>
+<body class="p-2 flex items-center justify-center min-h-screen">
+
+    <main class="w-full max-w-5xl h-full mx-auto grid grid-cols-1 lg:grid-cols-6 gap-2">
+        
+        <div id="teamsContainer" class="col-span-1 space-y-2 flex flex-col">
+            <!-- Team cards will be dynamically generated here -->
+        </div>
+
+        <div class="lg:col-span-4 flex flex-col gap-2">
+            <div id="clueDisplayCard" class="card flex-grow flex flex-col items-center justify-center text-center p-4 min-h-[250px]">
+                <!-- Game content will be dynamically generated here -->
+            </div>
+            <div id="questionGrid" class="question-grid">
+                <!-- Question buttons will be dynamically generated here -->
+            </div>
+        </div>
+
+        <div class="col-span-1 space-y-2 flex flex-col">
+            <div class="card text-center flex-grow">
+                <h3 class="text-base font-medium text-gray-500 mb-1">Current Team</h3>
+                <p id="currentTeamDisplay" class="text-2xl font-bold text-blue-600">-</p>
+            </div>
+            <div class="card text-center flex-grow">
+                <h3 class="text-base font-medium text-gray-500 mb-1">Time Left</h3>
+                <p id="timerDisplay" class="text-5xl font-bold text-red-600">00</p>
+            </div>
+            <div id="endGameButton" class="card text-center flex-grow flex items-center justify-center cursor-pointer hover:bg-red-100 transition-colors btn-press">
+                <h3 class="text-lg font-bold text-red-600">End Game</h3>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Audio elements for sound effects -->
+    <audio id="clueSound" src="https://kapildoesmarketing.github.io/Jeopardy/tone.mp3" preload="auto"></audio>
+    <audio id="backgroundMusic" src="https://kapildoesmarketing.github.io/Jeopardy/bg.mp3"  preload="auto" loop></audio>
+    <audio id="rightSound" src="https://kapildoesmarketing.github.io/Jeopardy/rightding.mp3"  preload="auto"></audio>
+    <audio id="wrongSound" src="https://kapildoesmarketing.github.io/Jeopardy/wrong.mp3"  preload="auto"></audio>
+    <audio id="bonusSound" src="https://kapildoesmarketing.github.io/Jeopardy/drum.mp3"  preload="auto"></audio>
+
+<script>
+    // --- GAME STATE ---
+    let gameStarted = false;
+    let currentTeamIndex = 0;
+    let answeredQuestions = [];
+    let teamScores = {};
+    let timerInterval = null;
+    let answeredBonusQuestions = [];
+    let activeBonusIndex = null;
+    let lastClickedQuestionId = null;
+    let isQuestionActive = false; // To prevent bonus rounds during a question
+    
+    // --- STATIC DATA ---
+    const teams = [
+        { name: 'Team Cats', logoUrl: 'https://kapildoesmarketing.github.io/demo/cat.png' },
+        { name: 'Team Dogs', logoUrl: 'https://kapildoesmarketing.github.io/demo/dog.png' },
+        { name: 'Team Piegon', logoUrl: 'https://kapildoesmarketing.github.io/demo/piegon.png' },
+        { name: 'Team Rabbit', logoUrl: 'https://kapildoesmarketing.github.io/demo/rabbit.png' },
+        { name: 'Team Tortoise', logoUrl: 'https://kapildoesmarketing.github.io/demo/tortoise.png' }
+    ];
+
+const bonusQuestions = [
+    { teamIndex: 0, clue: "What animal is a group of flamingos called?", options: ["A flock", "A dance party", "A flamboyance", "A brigade"], answer: "A flamboyance" },
+    { teamIndex: 1, clue: "What is a baby kangaroo called?", options: ["A cub", "A calf", "A joey", "A pup"], answer: "A joey" },
+    { teamIndex: 2, clue: "What is the only mammal that can truly fly?", options: ["A flying squirrel", "A bat", "A sugar glider", "A flying lemur"], answer: "A bat" },
+    { teamIndex: 3, clue: "What do otters do while they sleep in the water to make sure they don't drift away from their friends?", options: ["Hold hands", "Tie themselves to seaweed", "Form a raft", "Sing a song"], answer: "Hold hands" },
+    { teamIndex: 4, clue: "What is the collective noun for a group of crows?", options: ["A flock", "A cackle", "A murder", "A horde"], answer: "A murder" }
+];
+
+    
+ const jeopardyQuestions = [
+    { id: 1, clue: "This is what a group of owls is called, which sounds like they are having a serious meeting.", response: "What is a parliament?" },
+    { id: 2, clue: "This animal's heart is located in its head.", response: "What is a shrimp?" },
+    { id: 3, clue: "A snail can take a nap for this many years.", response: "What is three years?" },
+    { id: 4, clue: "This is the only mammal that is unable to jump.", response: "What is an elephant?" },
+    { id: 5, clue: "This is what a baby platypus is called.", response: "What is a puggle?" },
+    { id: 6, clue: "A group of pandas is called this, which sounds a bit awkward.", response: "What is an embarrassment?" },
+    { id: 7, clue: "This is the only type of bird that can fly backward.", response: "What is a hummingbird?" },
+    { id: 8, clue: "This is what a baby goat is called.", response: "What is a kid?" },
+    { id: 9, clue: "This animal has a square-shaped poop.", response: "What is a wombat?" },
+    { id: 10, clue: "This is what a group of hippos is called.", response: "What is a bloat?" },
+    { id: 11, clue: "This animal has fingerprints that are almost identical to a human's.", response: "What is a koala?" },
+    { id: 12, clue: "This is what a group of kangaroos is called.", response: "What is a mob?" },
+    { id: 13, clue: "This is the collective noun for a group of crows.", response: "What is a murder?" },
+    { id: 14, clue: "Otters do this while sleeping in the water so they don't float away from each other.", response: "What is hold hands?" },
+    { id: 15, clue: "This is what the tail fin of a dolphin or whale is called.", response: "What is a fluke?" },
+];
+
+
+    // --- DOM ELEMENTS CACHING---
+    const teamsContainer = document.getElementById('teamsContainer');
+    const questionGrid = document.getElementById('questionGrid');
+    const clueDisplayCard = document.getElementById('clueDisplayCard');
+    const currentTeamDisplay = document.getElementById('currentTeamDisplay');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const endGameButton = document.getElementById('endGameButton');
+    const clueSound = document.getElementById('clueSound');
+    const backgroundMusic = document.getElementById('backgroundMusic');
+    const rightSound = document.getElementById('rightSound');
+    const wrongSound = document.getElementById('wrongSound');
+    const bonusSound = document.getElementById('bonusSound');
+
+    // --- UTILITY FUNCTIONS ---
+    function playAudio(audioElement, volume = 0.5) {
+        audioElement.volume = volume;
+        audioElement.currentTime = 0;
+        audioElement.play().catch(error => console.error(`Audio playback failed: ${error}`));
+    }
+    
+    function updateClueDisplay(newHtml) {
+        clueDisplayCard.classList.remove('content-fade-in');
+        void clueDisplayCard.offsetWidth; // Trigger a reflow to restart the animation
+        clueDisplayCard.innerHTML = newHtml;
+        clueDisplayCard.classList.add('content-fade-in');
+    }
+
+    // --- RENDER FUNCTIONS ---
+    function renderGame() {
+        renderTeams();
+        renderCenterColumn();
+    }
+
+    function renderTeams() {
+        teamsContainer.innerHTML = '';
+        teams.forEach((team, index) => {
+            const teamCard = document.createElement('div');
+            const isActive = index === currentTeamIndex && gameStarted;
+            const bonusAnswered = answeredBonusQuestions.includes(index);
+            teamCard.className = `card p-2 transition-all duration-300 ${isActive ? 'ring-4 ring-blue-400' : ''}`;
+            teamCard.innerHTML = `
+                <div class="flex items-center gap-2 w-full">
+                    <img src="${team.logoUrl}" alt="${team.name} Logo" class="w-8 h-8 object-contain ${bonusAnswered ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}" onerror="this.src='https://placehold.co/40x40/E8EAED/3c4043?text=G'" onclick="triggerBonusRound(${index})">
+                    <div class="flex-grow">
+                        <p class="text-sm font-bold">${team.name}</p>
+                        <p class="score-display-${index} text-xl font-bold text-green-600 transition-colors duration-300">${teamScores[team.name] || 0}</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-1 mt-1 w-full">
+                    <button class="w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors text-base font-bold btn-press" onclick="manualAdjustScore(${index}, 5)" aria-label="Add 5 points to ${team.name}" title="Add 5 points">+</button>
+                    <button class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition-colors text-base font-bold btn-press" onclick="manualAdjustScore(${index}, -5)" aria-label="Subtract 5 points from ${team.name}" title="Subtract 5 points">-</button>
+                </div>
+            `;
+            teamsContainer.appendChild(teamCard);
+        });
+    }
+
+    function renderCenterColumn() {
+        if (!gameStarted) {
+            const welcomeHTML = `
+                <h2 class="text-3xl font-bold">Google Marketing Jeopardy</h2>
+                <p class="text-lg text-gray-500 mt-2">Get ready to test your knowledge.</p>
+                <button id="startGameBtn" class="mt-4 bg-blue-600 text-white font-bold py-2 px-6 rounded-full text-base shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 btn-press">
+                    Start Game
+                </button>
+            `;
+            updateClueDisplay(welcomeHTML);
+            questionGrid.innerHTML = '';
+            currentTeamDisplay.textContent = '-';
+            document.getElementById('startGameBtn').addEventListener('click', startGame);
+        } else {
+            currentTeamDisplay.textContent = teams[currentTeamIndex].name;
+            renderQuestionGrid();
+        }
+    }
+
+    function renderQuestionGrid() {
+        questionGrid.innerHTML = '';
+        for (let i = 1; i <= 15; i++) {
+            const questionDiv = document.createElement('div');
+            const isHard = i >= 11;
+            const isAnswered = answeredQuestions.includes(i);
+            
+            let classes = 'question-number';
+            if (isAnswered) {
+                classes += ' answered';
+            }
+            if (isHard) {
+                classes += ' hard-question';
+            }
+            
+            questionDiv.className = classes;
+            questionDiv.textContent = i;
+            questionDiv.dataset.questionId = i;
+            questionDiv.style.animationDelay = `${(i - 1) * 0.03}s`; // Staggered animation
+            if (!isAnswered) {
+                questionDiv.addEventListener('click', selectQuestion);
+            }
+            questionGrid.appendChild(questionDiv);
+        }
+    }
+    
+    // --- GAME LOGIC ---
+    function startGame() {
+        gameStarted = true;
+        updateClueDisplay(`<h2 class="text-2xl font-medium text-gray-600">Select a question to begin.</h2>`);
+        playAudio(backgroundMusic, 0.2);
+        renderGame();
+    }
+
+    function selectQuestion(event) {
+        const questionId = parseInt(event.target.dataset.questionId);
+        lastClickedQuestionId = questionId; // Store the current question's ID
+        if (answeredQuestions.includes(questionId)) return;
+        
+        isQuestionActive = true; // A question is now active, so lock state
+        playAudio(clueSound, 0.5);
+        answeredQuestions.push(questionId);
+        const question = jeopardyQuestions.find(q => q.id === questionId);
+        
+        if (question) {
+            const clueHTML = `
+                <div class="flex-grow flex items-center justify-center">
+                    <p class="text-2xl font-light p-2">${question.clue}</p>
+                </div>
+                <div class="flex space-x-2 mt-2">
+                    <button class="btn-press font-bold py-2 px-4 rounded-full shadow-md transition-transform transform hover:scale-105 bg-green-500 text-white text-sm" onclick="handleAnswer(true)">Right</button>
+                    <button class="btn-press font-bold py-2 px-4 rounded-full shadow-md transition-transform transform hover:scale-105 bg-red-500 text-white text-sm" onclick="handleAnswer(false)">Wrong</button>
+                </div>
+            `;
+            updateClueDisplay(clueHTML);
+            startTimer(30, 'main');
+        }
+        renderQuestionGrid();
+    }
+
+    window.handleAnswer = (isCorrect) => {
+        stopTimer();
+        isQuestionActive = false; // Question is resolved, unlock state
+        if (isCorrect) {
+            playAudio(rightSound, 0.5);
+            const points = (lastClickedQuestionId >= 11) ? 15 : 10;
+            adjustScore(currentTeamIndex, points);
+            
+            const question = jeopardyQuestions.find(q => q.id === lastClickedQuestionId);
+            const teamName = teams[currentTeamIndex].name;
+            const answer = question ? question.response : 'the correct answer';
+
+            const wellDoneHTML = `
+                <div class="flex-grow flex items-center justify-center flex-col text-center p-4">
+                    <h2 class="text-2xl font-bold text-green-600">Well Done, ${teamName}!</h2>
+                    <p class="text-xl mt-2">The correct answer is:</p>
+                    <p class="text-2xl font-bold mt-1">${answer}</p>
+                    <button class="btn-press mt-6 font-bold py-2 px-6 rounded-full shadow-md transition-transform transform hover:scale-105 bg-blue-600 text-white text-base" onclick="nextTurn()">Continue</button>
+                </div>
+            `;
+            updateClueDisplay(wellDoneHTML);
+        } else {
+            playAudio(wrongSound, 0.5);
+            enterStealMode();
+        }
+    }
+
+    function enterStealMode() {
+        const stealHTML = `
+            <div class="flex-grow flex items-center justify-center flex-col">
+                <p class="text-2xl font-bold text-yellow-500">STEAL!</p>
+                <p class="text-lg text-gray-600 mt-2">Which team is stealing?</p>
+            </div>
+            <div class="flex space-x-2 mt-2 flex-wrap justify-center">
+                ${teams.map((team, index) => {
+                    if (index === currentTeamIndex) return '';
+                    return `<button class="btn-press rounded-full w-14 h-14 flex items-center justify-center border-4 border-transparent hover:border-yellow-400 transition-all" onclick="selectStealingTeam(${index})">
+                                <img src="${team.logoUrl}" class="w-12 h-12 rounded-full object-cover" onerror="this.src='https://placehold.co/48x48/E8EAED/3c4043?text=G'">
+                            </button>`;
+                }).join('')}
+            </div>
+            <button class="btn-press font-bold py-2 px-4 rounded-full shadow-md transition-transform transform hover:scale-105 bg-gray-500 text-white mt-2 text-sm" onclick="noSteal()">No Steal</button>
+        `;
+        updateClueDisplay(stealHTML);
+    }
+    
+    window.selectStealingTeam = (teamIndex) => {
+        const question = jeopardyQuestions.find(q => q.id === lastClickedQuestionId);
+        const questionClue = question ? question.clue : "Could not retrieve the question.";
+
+        const stealAttemptHTML = `
+             <div class="flex-grow flex items-center justify-center flex-col text-center p-2">
+                 <p class="text-xl font-light mb-4">${questionClue}</p>
+                 <p class="text-2xl font-bold">Steal attempt by:</p>
+                 <p class="text-xl font-bold text-blue-600 mt-1">${teams[teamIndex].name}</p>
+            </div>
+            <div class="flex space-x-2 mt-2">
+                <button class="btn-press font-bold py-2 px-4 rounded-full shadow-md transition-transform transform hover:scale-105 bg-green-500 text-white text-sm" onclick="handleStealAnswer(${teamIndex}, true)">Right (+5)</button>
+                <button class="btn-press font-bold py-2 px-4 rounded-full shadow-md transition-transform transform hover:scale-105 bg-red-500 text-white text-sm" onclick="handleStealAnswer(${teamIndex}, false)">Wrong (-5)</button>
+            </div>
+        `;
+        updateClueDisplay(stealAttemptHTML);
+        startTimer(15, 'steal');
+    }
+
+    window.noSteal = () => {
+        stopTimer();
+        isQuestionActive = false; // Question is resolved, unlock state
+        const question = jeopardyQuestions.find(q => q.id === lastClickedQuestionId);
+        const answer = question ? question.response : 'the correct answer';
+
+        const answerRevealHTML = `
+            <div class="flex-grow flex items-center justify-center flex-col text-center p-4">
+                <h2 class="text-2xl font-bold text-yellow-600">No Steal!</h2>
+                <p class="text-xl mt-2">The correct answer was:</p>
+                <p class="text-2xl font-bold mt-1">${answer}</p>
+                <button class="btn-press mt-6 font-bold py-2 px-6 rounded-full shadow-md transition-transform transform hover:scale-105 bg-blue-600 text-white text-base" onclick="nextTurn()">Continue</button>
+            </div>
+        `;
+        updateClueDisplay(answerRevealHTML);
+    }
+    
+    window.handleStealAnswer = (teamIndex, isCorrect) => {
+        stopTimer();
+        isQuestionActive = false; // Question is resolved, unlock state
+        if (teamIndex !== null) {
+            if (isCorrect) {
+                playAudio(rightSound, 0.5);
+            } else {
+                playAudio(wrongSound, 0.5);
+            }
+            adjustScore(teamIndex, isCorrect ? 5 : -5);
+        }
+        
+        const question = jeopardyQuestions.find(q => q.id === lastClickedQuestionId);
+        const answer = question ? question.response : 'the correct answer';
+
+        if (isCorrect) {
+            const teamName = teams[teamIndex].name;
+            const wellDoneHTML = `
+                <div class="flex-grow flex items-center justify-center flex-col text-center p-4">
+                    <h2 class="text-2xl font-bold text-green-600">Well Done, ${teamName}! (Steal)</h2>
+                    <p class="text-xl mt-2">The correct answer is:</p>
+                    <p class="text-2xl font-bold mt-1">${answer}</p>
+                    <button class="btn-press mt-6 font-bold py-2 px-6 rounded-full shadow-md transition-transform transform hover:scale-105 bg-blue-600 text-white text-base" onclick="nextTurn()">Continue</button>
+                </div>
+            `;
+            updateClueDisplay(wellDoneHTML);
+        } else {
+            const wrongAnswerHTML = `
+                <div class="flex-grow flex items-center justify-center flex-col text-center p-4">
+                    <h2 class="text-2xl font-bold text-red-600">Incorrect!</h2>
+                    <p class="text-xl mt-2">The correct answer was:</p>
+                    <p class="text-2xl font-bold mt-1">${answer}</p>
+                    <button class="btn-press mt-6 font-bold py-2 px-6 rounded-full shadow-md transition-transform transform hover:scale-105 bg-blue-600 text-white text-base" onclick="nextTurn()">Continue</button>
+                </div>
+            `;
+            updateClueDisplay(wrongAnswerHTML);
+        }
+    }
+
+    window.manualAdjustScore = (teamIndex, points) => {
+        adjustScore(teamIndex, points);
+    }
+
+    function adjustScore(teamIndex, points) {
+        const teamName = teams[teamIndex].name;
+        teamScores[teamName] += points;
+        renderTeams(); // Re-render to update the score text
+
+        // Find the score element and apply animation
+        const scoreElement = document.querySelector(`.score-display-${teamIndex}`);
+        if(scoreElement) {
+            const animationClass = points > 0 ? 'score-increase' : 'score-decrease';
+            scoreElement.classList.add(animationClass);
+            setTimeout(() => {
+                scoreElement.classList.remove(animationClass);
+            }, 600); // Duration of the animation
+        }
+    }
+
+    window.nextTurn = () => {
+        if (answeredQuestions.length === jeopardyQuestions.length) {
+            endGame();
+            return;
+        }
+        currentTeamIndex = (currentTeamIndex + 1) % teams.length;
+        updateClueDisplay(`<h2 class="text-2xl font-medium text-gray-600">${teams[currentTeamIndex].name}, select a question.</h2>`);
+        renderGame();
+    }
+    
+    // --- BONUS ROUND LOGIC ---
+    window.triggerBonusRound = (logoIndex) => {
+        if (answeredBonusQuestions.includes(logoIndex) || !gameStarted || isQuestionActive) return;
+        stopTimer();
+        playAudio(bonusSound, 0.6);
+        activeBonusIndex = logoIndex;
+        const bonusQuestion = bonusQuestions.find(q => q.teamIndex === logoIndex);
+
+        const bonusHTML = `
+            <div class="flex-grow flex items-center justify-center flex-col">
+                <p class="text-2xl font-bold text-purple-600">BONUS QUESTION!</p>
+                <p class="text-xl font-light mt-2 text-center p-2">${bonusQuestion.clue}</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-4 w-full max-w-md">
+                ${bonusQuestion.options.map(option => `
+                    <button class="btn-press font-bold py-3 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 bg-white text-gray-800 border border-gray-300 text-sm" onclick="handleBonusOptionSelect('${option}')">${option}</button>
+                `).join('')}
+            </div>
+             <button class="btn-press font-bold py-2 px-4 rounded-full shadow-md transition-transform transform hover:scale-105 bg-gray-500 text-white mt-4 text-sm" onclick="cancelBonusRound()">Cancel Bonus</button>
+        `;
+        updateClueDisplay(bonusHTML);
+        startTimer(30, 'bonus');
+    }
+
+    window.handleBonusOptionSelect = (selectedOption) => {
+        const bonusQuestion = bonusQuestions.find(q => q.teamIndex === activeBonusIndex);
+        const isCorrect = selectedOption === bonusQuestion.answer;
+        
+        let resultHTML;
+        if (isCorrect) {
+            playAudio(rightSound, 0.5);
+            resultHTML = `<h2 class="text-2xl font-bold text-green-600">Correct!</h2>`;
+        } else {
+            playAudio(wrongSound, 0.5);
+            resultHTML = `
+                <h2 class="text-2xl font-bold text-red-600">Incorrect!</h2>
+                <p class="text-xl mt-2">The correct answer was: <span class="font-bold">${bonusQuestion.answer}</span></p>
+            `;
+        }
+
+        const teamSelectionHTML = `
+            <div class="flex-grow flex items-center justify-center flex-col text-center p-4">
+                ${resultHTML}
+                <p class="text-lg text-gray-600 mt-4">Which team attempted the bonus?</p>
+                <div class="flex space-x-2 mt-2 flex-wrap justify-center">
+                    ${teams.map((team, index) => {
+                        return `<button class="btn-press rounded-full w-14 h-14 flex items-center justify-center border-4 border-transparent hover:border-purple-400 transition-all" onclick="assignBonusPoints(${index}, ${isCorrect})">
+                                    <img src="${team.logoUrl}" class="w-12 h-12 rounded-full object-cover" onerror="this.src='https://placehold.co/48x48/E8EAED/3c4043?text=G'" title="${team.name}">
+                                </button>`;
+                    }).join('')}
+                </div>
+                <button class="btn-press font-bold py-2 px-4 rounded-full shadow-md transition-transform transform hover:scale-105 bg-gray-500 text-white mt-4 text-sm" onclick="finishBonusRound(false)">Nobody Answered</button>
+            </div>
+        `;
+        updateClueDisplay(teamSelectionHTML);
+    }
+
+    window.assignBonusPoints = (teamIndex, isCorrect) => {
+        if (activeBonusIndex === null) return;
+        adjustScore(teamIndex, isCorrect ? 15 : -5);
+        finishBonusRound(true);
+    }
+
+    window.finishBonusRound = (wasAttempted) => {
+        if (activeBonusIndex !== null) {
+            answeredBonusQuestions.push(activeBonusIndex);
+            activeBonusIndex = null;
+        }
+        renderTeams(); // Re-render to update logo clickability
+        updateClueDisplay(`
+            <div class="flex-grow flex items-center justify-center flex-col text-center p-4">
+                <h2 class="text-2xl font-medium text-gray-600">Bonus round complete!</h2>
+                <p class="text-lg mt-2">Returning to ${teams[currentTeamIndex].name}'s turn.</p>
+                <button class="btn-press mt-6 font-bold py-2 px-6 rounded-full shadow-md transition-transform transform hover:scale-105 bg-blue-600 text-white text-base" onclick="resumeNormalPlay()">Continue</button>
+            </div>
+        `);
+    }
+
+    window.resumeNormalPlay = () => {
+        updateClueDisplay(`<h2 class="text-2xl font-medium text-gray-600">${teams[currentTeamIndex].name}, select a question.</h2>`);
+    }
+
+    window.cancelBonusRound = (message = "Bonus round canceled.") => {
+        activeBonusIndex = null;
+        stopTimer(); // Ensure timer is stopped
+        updateClueDisplay(`
+            <div class="flex-grow flex items-center justify-center flex-col text-center p-4">
+                <h2 class="text-2xl font-medium text-gray-600">${message}</h2>
+                <p class="text-lg mt-2">Returning to ${teams[currentTeamIndex].name}'s turn.</p>
+                <button class="btn-press mt-6 font-bold py-2 px-6 rounded-full shadow-md transition-transform transform hover:scale-105 bg-blue-600 text-white text-base" onclick="resumeNormalPlay()">Continue</button>
+            </div>
+        `);
+    }
+
+    function endGame() {
+        stopTimer();
+        gameStarted = false;
+        isQuestionActive = false;
+        questionGrid.innerHTML = '';
+        backgroundMusic.pause();
+
+        let highestScore = -Infinity;
+        let winners = [];
+        for (const teamName in teamScores) {
+            if (teamScores[teamName] > highestScore) {
+                highestScore = teamScores[teamName];
+                winners = [teamName];
+            } else if (teamScores[teamName] === highestScore) {
+                winners.push(teamName);
+            }
+        }
+
+        let winnerMessage;
+        if (winners.length > 1) {
+            winnerMessage = `It's a tie between ${winners.join(' & ')}!`;
+        } else if (winners.length === 1 && teamScores[winners[0]] > 0) {
+            winnerMessage = `${winners[0]} wins the game!`;
+        } else {
+             winnerMessage = "Good game, everyone!";
+        }
+
+        const endGameHTML = `
+            <h2 class="text-3xl font-bold">Game Over!</h2>
+            <p class="text-xl text-blue-600 mt-2">${winnerMessage}</p>
+            <p class="text-lg text-gray-500 mt-2">Final Score: ${highestScore}</p>
+            <button id="playAgainBtn" class="btn-press mt-4 bg-blue-600 text-white font-bold py-2 px-6 rounded-full text-base shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
+                Play Again
+            </button>
+        `;
+        updateClueDisplay(endGameHTML);
+        currentTeamDisplay.textContent = 'Finished';
+        document.getElementById('playAgainBtn').addEventListener('click', initializeApp);
+    }
+
+    // --- TIMER FUNCTIONS ---
+    function startTimer(duration, timerType = 'main') {
+        clearInterval(timerInterval);
+        let timeLeft = duration;
+        timerDisplay.textContent = String(timeLeft).padStart(2, '0');
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.textContent = String(timeLeft).padStart(2, '0');
+            if (timeLeft <= 0) {
+                stopTimer();
+                switch (timerType) {
+                    case 'steal':
+                        handleStealAnswer(null, false);
+                        break;
+                    case 'bonus':
+                        cancelBonusRound("Time's up! Bonus round canceled.");
+                        break;
+                    case 'main':
+                    default:
+                        playAudio(wrongSound, 0.5);
+                        enterStealMode();
+                        break;
+                }
+            }
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+        timerDisplay.textContent = "00";
+    }
+
+    // --- INITIALIZATION ---
+    function initializeApp() {
+        gameStarted = false;
+        currentTeamIndex = 0;
+        answeredQuestions = [];
+        answeredBonusQuestions = [];
+        activeBonusIndex = null;
+        lastClickedQuestionId = null;
+        isQuestionActive = false;
+        teamScores = teams.reduce((acc, team) => ({ ...acc, [team.name]: 0 }), {});
+        
+        stopTimer();
+        if (backgroundMusic.played.length > 0 && !backgroundMusic.paused) {
+            backgroundMusic.pause();
+        }
+        backgroundMusic.currentTime = 0;
+
+        renderGame();
+    }
+
+    endGameButton.addEventListener('click', endGame);
+    window.onload = initializeApp;
+</script>
+</body>
+</html>
