@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fun Facts Feud</title>
+    <title>Family Feud</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -165,8 +165,10 @@
     </main>
     
     <!-- Audio elements -->
-    <audio id="rightSound" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" preload="auto"></audio>
-    <audio id="wrongSound" src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-bass-buzzer-948.mp3" preload="auto"></audio>
+    <audio id="backgroundMusic" src="https://kapildoesmarketing.github.io/familyfeud/bg.mp3" preload="auto" loop></audio>
+    <audio id="rightSound" src="https://kapildoesmarketing.github.io/familyfeud/rightding.mp3" preload="auto"></audio>
+    <audio id="wrongSound" src="https://kapildoesmarketing.github.io/familyfeud/wrong.mp3" preload="auto"></audio>
+    <audio id="drumSound" src="https://kapildoesmarketing.github.io/familyfeud/drum.mp3" preload="auto"></audio>
 
 <script>
     // --- GAME STATE ---
@@ -209,8 +211,12 @@
     const currentTeamDisplay = document.getElementById('currentTeamDisplay');
     const timerDisplay = document.getElementById('timerDisplay');
     const endGameButton = document.getElementById('endGameButton');
+    
+    // --- AUDIO ELEMENTS CACHING ---
+    const backgroundMusic = document.getElementById('backgroundMusic');
     const rightSound = document.getElementById('rightSound');
     const wrongSound = document.getElementById('wrongSound');
+    const drumSound = document.getElementById('drumSound');
 
     // --- UTILITY FUNCTIONS ---
     function playAudio(audioElement) {
@@ -235,7 +241,7 @@
             teamCard.className = `card p-2 transition-all duration-300 ${isActive ? 'ring-4 ring-blue-400' : ''}`;
             teamCard.innerHTML = `
                 <div class="flex items-center gap-2 w-full">
-                    <img src="${team.logoUrl}" alt="${team.name} Logo" class="w-8 h-8 rounded-full object-cover" onerror="this.src='https://placehold.co/40x40/E8EAED/3c4043?text=G'">
+                    <img src="${team.logoUrl}" alt="${team.name} Logo" class="w-8 h-8 object-contain" onerror="this.src='https://placehold.co/40x40/E8EAED/3c4043?text=G'">
                     <div class="flex-grow">
                         <p class="text-sm font-bold">${team.name}</p>
                         <p class="score-display-${index} text-xl font-bold text-green-600 transition-colors duration-300">${score}</p>
@@ -288,17 +294,22 @@
 
     function showStartScreen() {
         gameState = 'IDLE';
-        updateDisplay(questionDisplayCard, `<h2 class="text-3xl font-bold">Fun Facts Feud</h2>`);
+        updateDisplay(questionDisplayCard, `<h2 class="text-3xl font-bold">Search Storm</h2>`);
         const startHTML = `
             <div class="text-center h-full flex flex-col items-center justify-center">
-                <p class="text-lg text-gray-500 mt-2">Get ready for a battle of wits!</p>
+                <p class="text-lg text-gray-500 mt-2">Get ready for the challenge!</p>
                 <button id="startGameBtn" class="mt-4 bg-blue-600 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 btn-press">
                     Start Game
                 </button>
             </div>
         `;
         updateDisplay(answerBoard, startHTML);
-        document.getElementById('startGameBtn').addEventListener('click', startRound);
+        document.getElementById('startGameBtn').addEventListener('click', () => {
+             if (backgroundMusic.paused) {
+                 backgroundMusic.play().catch(e => console.error("BG music failed to play:", e));
+             }
+             startRound();
+        });
         currentTeamDisplay.textContent = "-";
         timerDisplay.textContent = "00";
         renderTeams();
@@ -353,6 +364,7 @@
     }
 
     function enterStealMode() {
+        playAudio(drumSound); // Play drum roll for steal round!
         gameState = 'STEAL';
         const remainingAnswers = feudQuestions[currentRound].answers.length - revealedAnswers.length;
 
@@ -367,7 +379,7 @@
             <div class="flex justify-center flex-wrap gap-2 mt-2">`;
         
         teams.forEach((team, index) => {
-            stealHTML += `<button onclick="attemptSteal(${index})" class="p-2 bg-gray-200 rounded-lg btn-press"><img src="${team.logoUrl}" class="w-10 h-10 rounded-full"></button>`;
+            stealHTML += `<button onclick="attemptSteal(${index})" class="p-2 bg-gray-200 rounded-lg btn-press"><img src="${team.logoUrl}" class="w-10 h-10"></button>`;
         });
 
         stealHTML += `</div><button onclick="noSteal()" class="mt-4 w-full bg-yellow-500 text-white font-bold py-3 rounded-lg text-lg btn-press">No Steal</button></div>`;
@@ -450,7 +462,7 @@
 
         setTimeout(() => {
             nextRound();
-        }, revealTime + 1000); // Add a little extra delay
+        }, revealTime); 
     }
 
     function nextRound() {
@@ -464,6 +476,8 @@
 
     function endGame() {
         stopTimer();
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
         gameState = 'IDLE';
         let highestScore = -Infinity;
         let winners = [];
@@ -568,8 +582,17 @@
         timerDisplay.textContent = "00";
     }
 
+    function setupAudio() {
+        // Set volumes for a balanced audio experience
+        backgroundMusic.volume = 0.1; // Low for background ambiance
+        rightSound.volume = 0.5;      // Clear but not overpowering
+        wrongSound.volume = 0.4;      // Slightly softer than the "right" sound
+        drumSound.volume = 0.6;       // A bit more impactful for the steal round event
+    }
+
     // Initial load
     window.onload = () => {
+        setupAudio();
         initializeGame();
     };
     
