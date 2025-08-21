@@ -272,7 +272,6 @@
 
     <script>
         // --- CONFIGURATION ---
-        // !!! IMPORTANT !!! AFTER DEPLOYING YOUR GOOGLE APPS SCRIPT, PASTE THE WEB APP URL HERE
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbyK1BkyxlWTpC27FpSGTGOjEDNUF23YWKlQKnD7FmS18QXMoEaLk9us_4ayazGWIrvn/exec';
 
         // --- GAME STATE & DATA ---
@@ -357,22 +356,16 @@
         const mainMenuScreen = document.getElementById('main-menu-screen');
         const gameScreen = document.getElementById('game-screen');
         const creatorScreen = document.getElementById('creator-screen');
-
-        // Game screen elements
         const teamsContainer = document.getElementById('teamsContainer');
         const questionDisplayCard = document.getElementById('questionDisplayCard');
         const answerBoard = document.getElementById('answerBoard');
         const currentTeamDisplay = document.getElementById('currentTeamDisplay');
         const timerDisplay = document.getElementById('timerDisplay');
         const mainMenuButton = document.getElementById('mainMenuButton');
-
-        // Audio elements
         const backgroundMusic = document.getElementById('backgroundMusic');
         const rightSound = document.getElementById('rightSound');
         const wrongSound = document.getElementById('wrongSound');
         const drumSound = document.getElementById('drumSound');
-
-        // Modal elements
         const modalContainer = document.getElementById('modal-container');
         const modalTitle = document.getElementById('modal-title');
         const modalBody = document.getElementById('modal-body');
@@ -483,15 +476,23 @@
 
         window.revealAnswer = (index) => {
             if (revealedAnswers.includes(index) || gameState === 'IDLE' || gameState === 'ROUND_OVER') return;
-            stopTimer();
-            revealedAnswers.push(index);
-            playAudio(rightSound);
-            adjustScore(currentTeamIndex, 10);
-            renderAnswerBoard();
-            if (revealedAnswers.length >= gameData.questions[currentRound].answers.length) {
+
+            if (gameState === 'NORMAL') {
+                stopTimer();
+                revealedAnswers.push(index);
+                playAudio(rightSound);
+                adjustScore(currentTeamIndex, 10);
+                renderAnswerBoard();
+                if (revealedAnswers.length >= gameData.questions[currentRound].answers.length) {
+                    endRound();
+                } else {
+                    nextTurn();
+                }
+            } else if (gameState === 'REVEAL_STEAL') {
+                revealedAnswers.push(index);
+                playAudio(rightSound);
+                adjustScore(stealingTeamIndex, 10);
                 endRound();
-            } else {
-                nextTurn();
             }
         };
 
@@ -506,9 +507,90 @@
 
         function nextTurn() {
             teamsPlayedThisRound.add(currentTeamIndex);
+
+            if (teamsPlayedThisRound.size >= gameData.teams.length) {
+                const totalAnswers = gameData.questions[currentRound].answers.length;
+                const numTeams = gameData.teams.length;
+                if (revealedAnswers.length === numTeams && totalAnswers > numTeams) {
+                    autoRevealAndEndRound();
+                } else {
+                    enterStealMode();
+                }
+                return;
+            }
+
             currentTeamIndex = (currentTeamIndex + 1) % gameData.teams.length;
             updateActiveTeamUI();
             startTimer(30);
+        }
+
+        async function autoRevealAndEndRound() {
+            gameState = 'ROUND_OVER';
+            stopTimer();
+            updateDisplay(questionDisplayCard, `<h2 class="text-2xl font-bold text-center">Revealing remaining answers...</h2>`);
+            const actionButtons = document.getElementById('action-buttons');
+            if (actionButtons) actionButtons.innerHTML = '';
+
+            const allAnswerIndexes = Array.from(Array(gameData.questions[currentRound].answers.length).keys());
+            for (const index of allAnswerIndexes) {
+                if (!revealedAnswers.includes(index)) {
+                    revealedAnswers.push(index);
+                    renderAnswerBoard();
+                    playAudio(rightSound);
+                    await new Promise(res => setTimeout(res, 500));
+                }
+            }
+            endRound();
+        }
+
+        function enterStealMode() {
+            gameState = 'STEAL';
+            stopTimer();
+            playAudio(drumSound);
+
+            let stealHTML = `<div class="text-center">
+                <h3 class="text-2xl font-bold text-purple-600">STEAL ROUND!</h3>
+                <p class="text-lg">Which team is attempting the steal?</p>
+                <div class="flex justify-center flex-wrap gap-2 mt-2">`;
+
+            gameData.teams.forEach((team, index) => {
+                stealHTML += `<button onclick="attemptSteal(${index})" class="p-2 bg-gray-200 rounded-lg btn-press hover:bg-gray-300">
+                        <img src="${team.logoUrl}" class="w-10 h-10 object-contain" onerror="this.src='https://placehold.co/40x40/E8EAED/3c4043?text=G'">
+                        <p class="text-xs">${team.name}</p>
+                    </button>`;
+            });
+
+            stealHTML += `</div><button onclick="endRound()" class="mt-4 w-full bg-yellow-500 text-white font-bold py-2 rounded-lg text-lg btn-press">No Steal / End Round</button></div>`;
+            updateDisplay(questionDisplayCard, stealHTML);
+            currentTeamDisplay.textContent = "Steal!";
+            const actionButtons = document.getElementById('action-buttons');
+            if (actionButtons) actionButtons.innerHTML = '';
+        }
+
+        function attemptSteal(teamIndex) {
+            gameState = 'STEAL_ATTEMPT';
+            stealingTeamIndex = teamIndex;
+
+            let attemptHTML = `<div class="text-center">
+                <h3 class="text-xl font-bold mt-2">Steal attempt by ${gameData.teams[teamIndex].name}</h3>
+                <p>Was their answer on the board?</p>
+                <div class="flex justify-center gap-4 mt-4">
+                    <button onclick="handleSteal(true)" class="bg-green-500 text-white font-bold py-2 px-6 rounded-lg text-lg btn-press">Yes (Reveal Answer)</button>
+                    <button onclick="handleSteal(false)" class="bg-red-500 text-white font-bold py-2 px-6 rounded-lg text-lg btn-press">No (Wrong)</button>
+                </div>
+            </div>`;
+            updateDisplay(questionDisplayCard, attemptHTML);
+        }
+
+        function handleSteal(isCorrect) {
+            if (isCorrect) {
+                playAudio(rightSound);
+                gameState = 'REVEAL_STEAL';
+                updateDisplay(questionDisplayCard, `<h3 class="text-xl font-bold text-center text-green-600">Correct! Please reveal the answer they gave.</h3>`);
+            } else {
+                playAudio(wrongSound);
+                endRound();
+            }
         }
 
         function endRound() {
@@ -563,7 +645,7 @@
         }
 
         function goToMainMenu() {
-            endGame(true); // End game without stopping music if it's playing
+            endGame(true);
             showScreen('main-menu-screen');
         }
 
@@ -637,7 +719,7 @@
             try {
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Required for simple POST requests to GAS from browser
+                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -646,7 +728,6 @@
                         gameData: dataToSave
                     })
                 });
-                // no-cors means we can't read the response, so we just assume it worked.
                 hideModal();
                 showModal('Success!', `<p>Your game has been saved under the ID: <strong>${ldap}</strong>. You can now load it from the main menu.</p>`, [{
                     text: 'Main Menu',
@@ -705,10 +786,7 @@
             }
         }
 
-
         // --- EVENT LISTENERS ---
-
-        // Main Menu Buttons
         document.getElementById('play-demo-btn').addEventListener('click', () => startGame(demoTeams, demoQuestions));
         document.getElementById('create-game-btn').addEventListener('click', () => showScreen('creator-screen'));
         document.getElementById('load-game-btn').addEventListener('click', () => {
@@ -730,13 +808,10 @@
             document.getElementById('ldap-load-input').focus();
         });
 
-        // Game Screen Buttons
         mainMenuButton.addEventListener('click', goToMainMenu);
 
-        // Creator Screen Buttons
         document.getElementById('creator-back-btn').addEventListener('click', () => {
             showScreen('main-menu-screen');
-            // Reset creator
             document.getElementById('teams-section').classList.remove('hidden');
             document.getElementById('questions-section').classList.add('hidden');
         });
@@ -835,6 +910,9 @@
                     });
                 });
 
+                const numTeams = finalTeams.length;
+                let questionValidationError = false;
+
                 document.querySelectorAll('#questions-container-creator .question-entry').forEach(qEntry => {
                     const questionText = qEntry.querySelector('.question-text').value.trim();
                     const answers = [];
@@ -844,12 +922,24 @@
                             text: answerText
                         });
                     });
-                    if (questionText && answers.length > 0) finalQuestions.push({
-                        question: questionText,
-                        answers
-                    });
-                    else hasError = true;
+                    if (questionText && answers.length > 0) {
+                        if (answers.length < numTeams) {
+                            questionValidationError = true;
+                        }
+                        finalQuestions.push({
+                            question: questionText,
+                            answers
+                        });
+                    } else {
+                        hasError = true;
+                    }
                 });
+
+                if (questionValidationError) {
+                    questionsError.classList.remove('hidden');
+                    questionsError.textContent = `Please ensure every question has at least ${numTeams} answers (the number of teams you created).`;
+                    return;
+                }
 
                 if (hasError || finalTeams.length === 0 || finalQuestions.length === 0) {
                     questionsError.classList.remove('hidden');
@@ -882,7 +972,6 @@
             });
 
         })();
-
 
         // --- INITIALIZATION ---
         window.onload = () => {
