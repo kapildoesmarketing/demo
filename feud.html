@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Feud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Google Sans', 'Roboto', sans-serif;
+            background-color: #F1F3F4;
+            color: #3c4043;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 1rem;
+            border: 1px solid #DADCE0;
+            padding: 0.75rem;
+            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.302), 0 2px 6px 2px rgba(60, 64, 67, 0.149);
+        }
+        .btn-press {
+            transition: transform 0.1s ease, filter 0.1s ease;
+        }
+        .btn-press:active {
+            transform: scale(0.95);
+            filter: brightness(0.9);
+        }
+        .answer-card {
+            background-color: transparent;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            perspective: 1000px;
+            transition: all 0.4s ease;
+            position: relative;
+            height: 100%;
+            opacity: 0;
+            transform: scale(0.5);
+            animation: pop-in 0.5s ease-out forwards;
+        }
+        .answer-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .answer-card.revealed .answer-card-inner {
+            transform: rotateY(180deg);
+        }
+        .answer-card .front,
+        .answer-card .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+        }
+        .answer-card .front {
+            background-color: #E8EAED;
+            color: #3c4043;
+        }
+        .answer-card .back {
+            background-color: #4285F4;
+            color: white;
+            padding: 1rem;
+            transform: rotateY(180deg);
+        }
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        /* Keyframe Animations */
+        @keyframes pop-in {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        @keyframes content-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes score-increase-anim {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.4);
+                color: #10B981;
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        @keyframes score-decrease-anim {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.4);
+                color: #EF4444;
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        .content-fade-in {
+            animation: content-fade-in 0.4s ease-out;
+        }
+        .score-increase {
+            animation: score-increase-anim 0.6s ease-in-out;
+        }
+        .score-decrease {
+            animation: score-decrease-anim 0.6s ease-in-out;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .new-item {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="p-2 flex items-center justify-center min-h-screen">
+
+    <!-- Main Menu Screen -->
+    <div id="main-menu-screen" class="screen w-full max-w-2xl mx-auto flex-col items-center justify-center">
+        <div class="card p-8 text-center w-full">
+            <h1 class="text-5xl font-bold text-blue-600">Family Feud</h1>
+            <p class="text-lg text-gray-500 mt-2 mb-8">Ready to Play?</p>
+            <div class="space-y-4 flex flex-col">
+                <button id="play-demo-btn" class="w-full bg-blue-500 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105 btn-press">Play Demo</button>
+                <button id="create-game-btn" class="w-full bg-green-500 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg hover:bg-green-600 transition-transform transform hover:scale-105 btn-press">Create Your Own Game</button>
+                <button id="load-game-btn" class="w-full bg-yellow-500 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg hover:bg-yellow-600 transition-transform transform hover:scale-105 btn-press">Load Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <main id="game-screen" class="screen hidden w-full max-w-5xl h-full mx-auto grid grid-cols-1 lg:grid-cols-6 gap-2">
+        <div id="teamsContainer" class="col-span-1 space-y-2 flex flex-col"></div>
+        <div class="lg:col-span-4 flex flex-col gap-2">
+            <div id="questionDisplayCard" class="card flex-grow flex flex-col items-center justify-center p-4 min-h-[100px]"></div>
+            <div id="answerBoard" class="card flex-grow flex flex-col p-4 min-h-[300px]"></div>
+        </div>
+        <div class="col-span-1 space-y-2 flex flex-col">
+            <div class="card text-center flex-grow">
+                <h3 class="text-base font-medium text-gray-500 mb-1">Current Team</h3>
+                <p id="currentTeamDisplay" class="text-2xl font-bold text-blue-600">-</p>
+            </div>
+            <div class="card text-center flex-grow">
+                <h3 class="text-base font-medium text-gray-500 mb-1">Time Left</h3>
+                <p id="timerDisplay" class="text-5xl font-bold text-red-600">00</p>
+            </div>
+            <div id="mainMenuButton" class="card text-center flex-grow flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors btn-press">
+                <h3 class="text-lg font-bold text-gray-600">Main Menu</h3>
+            </div>
+        </div>
+    </main>
+
+    <!-- Creator Screen -->
+    <div id="creator-screen" class="screen hidden w-full max-w-4xl mx-auto flex-col items-center justify-center p-4">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Family Feud Game Generator</h1>
+            <p class="text-gray-600 mt-2">Create custom teams and questions for your game.</p>
+        </header>
+        <section id="teams-section" class="bg-white p-8 rounded-xl shadow-lg w-full">
+            <h2 class="text-2xl font-bold text-gray-700 mb-6 border-b pb-3">1. Create Teams</h2>
+            <div id="teams-container-creator" class="space-y-4">
+                <div class="team-entry flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" placeholder="Team Name (Required)" class="team-name w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition">
+                        <input type="text" placeholder="Team Logo URL (Optional)" class="team-logo w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center justify-between mt-6">
+                <button id="add-team-btn" class="px-5 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition shadow-md btn-press">+ Add Another Team</button>
+                <button id="done-teams-btn" class="px-8 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition shadow-lg btn-press">Next: Create Questions</button>
+            </div>
+            <p id="teams-error" class="text-red-500 mt-4 text-sm font-medium hidden">Please provide a name for every team.</p>
+        </section>
+        <section id="questions-section" class="bg-white p-8 rounded-xl shadow-lg w-full hidden mt-8">
+            <h2 class="text-2xl font-bold text-gray-700 mb-6 border-b pb-3">2. Create Questionnaire</h2>
+            <div id="questions-container-creator" class="space-y-6">
+                <div class="question-entry bg-gray-50 p-6 rounded-lg border border-gray-200">
+                    <div class="flex items-center gap-4 mb-4">
+                        <input type="text" placeholder="Question (e.g., Name a planet...)" class="question-text w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition flex-grow">
+                    </div>
+                    <div class="answers-container space-y-2 pl-8 border-l-2 border-indigo-200">
+                        <div class="answer-entry flex items-center gap-2">
+                            <input type="text" placeholder="Answer" class="answer-text w-full p-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 transition flex-grow">
+                        </div>
+                    </div>
+                    <button class="add-answer-btn mt-4 ml-8 px-4 py-1 bg-indigo-100 text-indigo-700 font-semibold rounded-lg hover:bg-indigo-200 text-sm btn-press">+ Add Answer</button>
+                </div>
+            </div>
+            <div class="flex items-center justify-between mt-6">
+                <button id="add-question-btn" class="px-5 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 shadow-md btn-press">+ Add Another Question</button>
+                <button id="generate-btn" class="px-8 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition shadow-lg btn-press">Save Game</button>
+            </div>
+            <p id="questions-error" class="text-red-500 mt-4 text-sm font-medium hidden">Please fill out all question and answer fields.</p>
+        </section>
+        <button id="creator-back-btn" class="mt-8 text-gray-600 hover:text-blue-600 font-semibold">← Back to Main Menu</button>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modal-container" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4">Modal Title</h2>
+            <div id="modal-body"></div>
+            <div id="modal-footer" class="mt-6 flex justify-end gap-3"></div>
+        </div>
+    </div>
+
+    <!-- Audio elements -->
+    <audio id="backgroundMusic" src="https://kapildoesmarketing.github.io/familyfeud/bg.mp3" preload="auto" loop></audio>
+    <audio id="rightSound" src="https://kapildoesmarketing.github.io/familyfeud/rightding.mp3" preload="auto"></audio>
+    <audio id="wrongSound" src="https://kapildoesmarketing.github.io/familyfeud/wrong.mp3" preload="auto"></audio>
+    <audio id="drumSound" src="https://kapildoesmarketing.github.io/familyfeud/drum.mp3" preload="auto"></audio>
+
+    <script>
+        // --- CONFIGURATION ---
+        // !!! IMPORTANT !!! AFTER DEPLOYING YOUR GOOGLE APPS SCRIPT, PASTE THE WEB APP URL HERE
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyK1BkyxlWTpC27FpSGTGOjEDNUF23YWKlQKnD7FmS18QXMoEaLk9us_4ayazGWIrvn/exec';
+
+        // --- GAME STATE & DATA ---
+        let gameData = {
+            teams: [],
+            questions: []
+        };
+        let teamScores = {};
+        let currentRound = 0;
+        let revealedAnswers = [];
+        let currentTeamIndex = 0;
+        let teamsPlayedThisRound = new Set();
+        let gameState = 'IDLE'; // IDLE, NORMAL, STEAL, STEAL_ATTEMPT, REVEAL_STEAL, ROUND_OVER
+        let stealingTeamIndex = null;
+        let timerInterval = null;
+        let missesThisRound = 0;
+
+        // --- DEMO DATA ---
+        const demoTeams = [{
+            name: 'Team A',
+            logoUrl: ''
+        }, {
+            name: 'Team B',
+            logoUrl: ''
+        }, {
+            name: 'Team C',
+            logoUrl: ''
+        }, {
+            name: 'Team D',
+            logoUrl: ''
+        }, {
+            name: 'Team E',
+            logoUrl: ''
+        }];
+        const demoQuestions = [{
+            question: "Which google product is most used by Googlers while working?.",
+            answers: [{
+                text: "Gmail"
+            }, {
+                text: "Moma"
+            }, {
+                text: "Memegen"
+            }, {
+                text: "Calendar"
+            }, {
+                text: "Sheets"
+            }, {
+                text: "Gemini"
+            }]
+        }, {
+            question: "Name something you might find in Microkitchens.",
+            answers: [{
+                text: "Fruits"
+            }, {
+                text: "Snacks"
+            }, {
+                text: "Choclates"
+            }, {
+                text: "Cold Drinks"
+            }, {
+                text: "Juices"
+            }, {
+                text: "Plates & Bowls"
+            }]
+        }, {
+            question: "What are our most popular cab logout slots?.",
+            answers: [{
+                text: "2 PM"
+            }, {
+                text: "3.30 PM"
+            }, {
+                text: "4.30PM"
+            }, {
+                text: "5.45 PM"
+            }, {
+                text: "6.30 PM"
+            }]
+        }, ];
+
+        // --- DOM ELEMENTS ---
+        const screens = document.querySelectorAll('.screen');
+        const mainMenuScreen = document.getElementById('main-menu-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const creatorScreen = document.getElementById('creator-screen');
+
+        // Game screen elements
+        const teamsContainer = document.getElementById('teamsContainer');
+        const questionDisplayCard = document.getElementById('questionDisplayCard');
+        const answerBoard = document.getElementById('answerBoard');
+        const currentTeamDisplay = document.getElementById('currentTeamDisplay');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const mainMenuButton = document.getElementById('mainMenuButton');
+
+        // Audio elements
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const rightSound = document.getElementById('rightSound');
+        const wrongSound = document.getElementById('wrongSound');
+        const drumSound = document.getElementById('drumSound');
+
+        // Modal elements
+        const modalContainer = document.getElementById('modal-container');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalFooter = document.getElementById('modal-footer');
+
+        // --- SCREEN & MODAL MANAGEMENT ---
+        function showScreen(screenId) {
+            screens.forEach(screen => {
+                screen.classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function showModal(title, bodyHtml, footerButtons = []) {
+            modalTitle.textContent = title;
+            modalBody.innerHTML = bodyHtml;
+            modalFooter.innerHTML = '';
+            footerButtons.forEach(btnInfo => {
+                const button = document.createElement('button');
+                button.textContent = btnInfo.text;
+                button.className = btnInfo.classes || 'px-4 py-2 bg-gray-200 rounded-lg btn-press';
+                button.onclick = btnInfo.onClick;
+                modalFooter.appendChild(button);
+            });
+            modalContainer.classList.add('active');
+        }
+
+        function hideModal() {
+            modalContainer.classList.remove('active');
+        }
+
+        // --- UTILITY & AUDIO FUNCTIONS ---
+        function playAudio(audioElement) {
+            audioElement.currentTime = 0;
+            audioElement.play().catch(error => console.error(`Audio playback failed: ${error}`));
+        }
+
+        function updateDisplay(element, newHtml) {
+            element.classList.remove('content-fade-in');
+            void element.offsetWidth; // Trigger reflow
+            element.innerHTML = newHtml;
+            element.classList.add('content-fade-in');
+        }
+
+        // --- CORE GAME LOGIC ---
+        function startGame(teamsData, questionsData) {
+            if (!teamsData || teamsData.length === 0 || !questionsData || questionsData.length === 0) {
+                showModal('Error', '<p>The game data is invalid or empty. Cannot start the game.</p>', [{
+                    text: 'OK',
+                    classes: 'px-4 py-2 bg-blue-500 text-white rounded-lg btn-press',
+                    onClick: hideModal
+                }]);
+                return;
+            }
+            gameData.teams = teamsData;
+            gameData.questions = questionsData;
+            showScreen('game-screen');
+            if (backgroundMusic.paused) {
+                backgroundMusic.play().catch(e => console.error("BG music failed to play:", e));
+            }
+            initializeGame();
+        }
+
+        function renderTeams() {
+            teamsContainer.innerHTML = '';
+            gameData.teams.forEach((team, index) => {
+                const teamCard = document.createElement('div');
+                const score = teamScores[team.name] || 0;
+                const isActive = index === currentTeamIndex && gameState === 'NORMAL';
+                teamCard.className = `card p-2 transition-all duration-300 ${isActive ? 'ring-4 ring-blue-400' : ''}`;
+                teamCard.innerHTML = `
+                    <div class="flex items-center gap-2 w-full">
+                        <img src="${team.logoUrl}" alt="${team.name} Logo" class="w-8 h-8 object-contain" onerror="this.src='https://placehold.co/40x40/E8EAED/3c4043?text=G'">
+                        <div class="flex-grow">
+                            <p class="text-sm font-bold">${team.name}</p>
+                            <p class="score-display-${index} text-xl font-bold text-green-600 transition-colors duration-300">${score}</p>
+                        </div>
+                    </div>
+                `;
+                teamsContainer.appendChild(teamCard);
+            });
+        }
+
+        function renderAnswerBoard() {
+            const roundData = gameData.questions[currentRound];
+            const questionHTML = `<p class="text-sm font-medium text-blue-600 mb-1">Round ${currentRound + 1}</p><h2 class="text-2xl font-bold text-center">${roundData.question}</h2>`;
+            updateDisplay(questionDisplayCard, questionHTML);
+            let boardHTML = `<div class="flex flex-col h-full w-full"><div class="grid grid-cols-2 gap-3 w-full flex-grow">`;
+            roundData.answers.forEach((answer, index) => {
+                const isRevealed = revealedAnswers.includes(index);
+                boardHTML += `
+                    <div class="answer-card ${isRevealed ? 'revealed' : ''}" onclick="revealAnswer(${index})" style="animation-delay: ${index * 0.05}s">
+                        <div class="answer-card-inner">
+                            <div class="front"><span class="text-2xl font-bold">${index + 1}</span></div>
+                            <div class="back"><span class="text-lg font-semibold text-center">${answer.text}</span></div>
+                        </div>
+                    </div>`;
+            });
+            boardHTML += `</div><div id="action-buttons" class="mt-4 flex-shrink-0">`;
+            if (gameState === 'NORMAL') {
+                boardHTML += `<button onclick="passTurn()" class="w-full bg-gray-500 text-white font-bold py-3 rounded-lg text-xl btn-press">Pass Turn</button>`;
+            } else if (gameState === 'ROUND_OVER') {
+                boardHTML += `<button onclick="nextRound()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-xl btn-press">Next Question</button>`;
+            }
+            boardHTML += `</div></div>`;
+            answerBoard.innerHTML = boardHTML;
+        }
+
+        window.revealAnswer = (index) => {
+            if (revealedAnswers.includes(index) || gameState === 'IDLE' || gameState === 'ROUND_OVER') return;
+            stopTimer();
+            revealedAnswers.push(index);
+            playAudio(rightSound);
+            adjustScore(currentTeamIndex, 10);
+            renderAnswerBoard();
+            if (revealedAnswers.length >= gameData.questions[currentRound].answers.length) {
+                endRound();
+            } else {
+                nextTurn();
+            }
+        };
+
+        window.passTurn = () => {
+            if (gameState === 'NORMAL') {
+                stopTimer();
+                playAudio(wrongSound);
+                missesThisRound++;
+                nextTurn();
+            }
+        };
+
+        function nextTurn() {
+            teamsPlayedThisRound.add(currentTeamIndex);
+            currentTeamIndex = (currentTeamIndex + 1) % gameData.teams.length;
+            updateActiveTeamUI();
+            startTimer(30);
+        }
+
+        function endRound() {
+            gameState = 'ROUND_OVER';
+            stopTimer();
+            currentTeamDisplay.textContent = "Round Over";
+            const allAnswerIndexes = gameData.questions[currentRound].answers.map((_, i) => i);
+            allAnswerIndexes.forEach(index => {
+                if (!revealedAnswers.includes(index)) revealedAnswers.push(index);
+            });
+            renderAnswerBoard();
+        }
+
+        function nextRound() {
+            currentRound++;
+            if (currentRound >= gameData.questions.length) {
+                endGame();
+            } else {
+                startRound();
+            }
+        }
+
+        function endGame(manual = false) {
+            stopTimer();
+            if (!manual) {
+                backgroundMusic.pause();
+                backgroundMusic.currentTime = 0;
+            }
+            gameState = 'IDLE';
+            let highestScore = -Infinity;
+            let winners = [];
+
+            for (const teamName in teamScores) {
+                if (teamScores[teamName] > highestScore) {
+                    highestScore = teamScores[teamName];
+                    winners = [teamName];
+                } else if (teamScores[teamName] === highestScore) {
+                    winners.push(teamName);
+                }
+            }
+            const winnerMessage = winners.length > 1 ? `It's a tie between ${winners.join(' & ')}!` : (winners.length === 1 ? `${winners[0]} wins!` : "Good game!");
+
+            updateDisplay(questionDisplayCard, `<h2 class="text-4xl font-bold text-center">Game Over!</h2>`);
+            const endHTML = `<div class="text-center h-full flex flex-col items-center justify-center">
+                    <p class="text-2xl text-blue-600 mt-2">${winnerMessage}</p>
+                    <button onclick="goToMainMenu()" class="mt-4 bg-blue-600 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg btn-press">
+                        Main Menu
+                    </button>
+                </div>`;
+            updateDisplay(answerBoard, endHTML);
+            currentTeamDisplay.textContent = 'Finished';
+        }
+
+        function goToMainMenu() {
+            endGame(true); // End game without stopping music if it's playing
+            showScreen('main-menu-screen');
+        }
+
+        function updateActiveTeamUI() {
+            currentTeamDisplay.textContent = gameData.teams[currentTeamIndex].name;
+            renderTeams();
+        }
+
+        function adjustScore(teamIndex, points) {
+            const teamName = gameData.teams[teamIndex].name;
+            teamScores[teamName] = (teamScores[teamName] || 0) + points;
+            renderTeams();
+            const scoreElement = document.querySelector(`.score-display-${teamIndex}`);
+            if (scoreElement) {
+                const animationClass = points > 0 ? 'score-increase' : 'score-decrease';
+                scoreElement.classList.add(animationClass);
+                setTimeout(() => scoreElement.classList.remove(animationClass), 600);
+            }
+        }
+
+        function initializeGame() {
+            gameData.teams.forEach(team => {
+                teamScores[team.name] = 0;
+            });
+            currentRound = 0;
+            startRound();
+        }
+
+        function startRound() {
+            gameState = 'NORMAL';
+            currentTeamIndex = currentRound % gameData.teams.length;
+            revealedAnswers = [];
+            teamsPlayedThisRound.clear();
+            missesThisRound = 0;
+            renderAnswerBoard();
+            updateActiveTeamUI();
+            startTimer(30);
+        }
+
+        function startTimer(duration) {
+            clearInterval(timerInterval);
+            let timeLeft = duration;
+            timerDisplay.textContent = String(timeLeft).padStart(2, '0');
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = String(timeLeft).padStart(2, '0');
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    if (gameState === 'NORMAL') passTurn();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerDisplay.textContent = "00";
+        }
+
+        // --- DATA SAVING/LOADING (GOOGLE APPS SCRIPT) ---
+        async function saveGameData(ldap, dataToSave) {
+            if (!GAS_URL) {
+                showModal('Configuration Error', '<p>The Google Apps Script URL is not set. Please configure it in the script.</p>', [{
+                    text: 'OK',
+                    classes: 'px-4 py-2 bg-red-500 text-white rounded-lg btn-press',
+                    onClick: hideModal
+                }]);
+                return;
+            }
+            showModal('Saving...', '<p class="text-center">Saving your game data. Please wait...</p>');
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Required for simple POST requests to GAS from browser
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ldap: ldap,
+                        gameData: dataToSave
+                    })
+                });
+                // no-cors means we can't read the response, so we just assume it worked.
+                hideModal();
+                showModal('Success!', `<p>Your game has been saved under the ID: <strong>${ldap}</strong>. You can now load it from the main menu.</p>`, [{
+                    text: 'Main Menu',
+                    classes: 'px-4 py-2 bg-blue-500 text-white rounded-lg btn-press',
+                    onClick: () => {
+                        hideModal();
+                        showScreen('main-menu-screen');
+                    }
+                }]);
+
+            } catch (error) {
+                console.error('Error saving data:', error);
+                hideModal();
+                showModal('Error', '<p>There was an error saving your game data. Please check the console for details.</p>', [{
+                    text: 'OK',
+                    classes: 'px-4 py-2 bg-red-500 text-white rounded-lg btn-press',
+                    onClick: hideModal
+                }]);
+            }
+        }
+
+        async function loadGameData(ldap) {
+            if (!GAS_URL) {
+                showModal('Configuration Error', '<p>The Google Apps Script URL is not set. Please configure it in the script.</p>', [{
+                    text: 'OK',
+                    classes: 'px-4 py-2 bg-red-500 text-white rounded-lg btn-press',
+                    onClick: hideModal
+                }]);
+                return;
+            }
+            showModal('Loading...', `<p class="text-center">Searching for game with ID: <strong>${ldap}</strong>...</p>`);
+
+            try {
+                const response = await fetch(`${GAS_URL}?ldap=${encodeURIComponent(ldap)}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+
+                hideModal();
+                if (data.error) {
+                    showModal('Not Found', `<p>${data.error}</p>`, [{
+                        text: 'OK',
+                        classes: 'px-4 py-2 bg-red-500 text-white rounded-lg btn-press',
+                        onClick: hideModal
+                    }]);
+                } else {
+                    startGame(data.teams, data.questions);
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                hideModal();
+                showModal('Error', '<p>Could not load game data. Please check the ID and your network connection.</p>', [{
+                    text: 'OK',
+                    classes: 'px-4 py-2 bg-red-500 text-white rounded-lg btn-press',
+                    onClick: hideModal
+                }]);
+            }
+        }
+
+
+        // --- EVENT LISTENERS ---
+
+        // Main Menu Buttons
+        document.getElementById('play-demo-btn').addEventListener('click', () => startGame(demoTeams, demoQuestions));
+        document.getElementById('create-game-btn').addEventListener('click', () => showScreen('creator-screen'));
+        document.getElementById('load-game-btn').addEventListener('click', () => {
+            showModal(
+                'Load Game',
+                '<p>Enter the ID (LDAP) you used to save the game.</p><input type="text" id="ldap-load-input" class="w-full mt-2 p-2 border rounded-lg" placeholder="e.g., jdoe">',
+                [{
+                    text: 'Cancel',
+                    onClick: hideModal
+                }, {
+                    text: 'Load',
+                    classes: 'px-4 py-2 bg-blue-500 text-white rounded-lg btn-press',
+                    onClick: () => {
+                        const ldap = document.getElementById('ldap-load-input').value.trim();
+                        if (ldap) loadGameData(ldap);
+                    }
+                }]
+            );
+            document.getElementById('ldap-load-input').focus();
+        });
+
+        // Game Screen Buttons
+        mainMenuButton.addEventListener('click', goToMainMenu);
+
+        // Creator Screen Buttons
+        document.getElementById('creator-back-btn').addEventListener('click', () => {
+            showScreen('main-menu-screen');
+            // Reset creator
+            document.getElementById('teams-section').classList.remove('hidden');
+            document.getElementById('questions-section').classList.add('hidden');
+        });
+
+
+        // --- GAME CREATOR LOGIC ---
+        (() => {
+            const teamsContainer = document.getElementById('teams-container-creator');
+            const addTeamBtn = document.getElementById('add-team-btn');
+            const doneTeamsBtn = document.getElementById('done-teams-btn');
+            const teamsError = document.getElementById('teams-error');
+            const teamsSection = document.getElementById('teams-section');
+            const questionsSection = document.getElementById('questions-section');
+
+            addTeamBtn.addEventListener('click', () => {
+                const newTeamEntry = teamsContainer.children[0].cloneNode(true);
+                newTeamEntry.classList.add('new-item');
+                newTeamEntry.querySelectorAll('input').forEach(input => input.value = '');
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 hover:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`;
+                removeBtn.className = 'remove-team-btn p-1';
+                removeBtn.onclick = () => newTeamEntry.remove();
+                newTeamEntry.appendChild(removeBtn);
+                teamsContainer.appendChild(newTeamEntry);
+            });
+
+            doneTeamsBtn.addEventListener('click', () => {
+                let hasError = false;
+                teamsError.classList.add('hidden');
+                document.querySelectorAll('#teams-container-creator .team-entry').forEach(entry => {
+                    const nameInput = entry.querySelector('.team-name');
+                    if (!nameInput.value.trim()) {
+                        nameInput.classList.add('border-red-500');
+                        hasError = true;
+                    } else {
+                        nameInput.classList.remove('border-red-500');
+                    }
+                });
+                if (hasError) {
+                    teamsError.classList.remove('hidden');
+                    return;
+                }
+                teamsSection.classList.add('hidden');
+                questionsSection.classList.remove('hidden');
+            });
+
+            const questionsContainer = document.getElementById('questions-container-creator');
+            const addQuestionBtn = document.getElementById('add-question-btn');
+            const generateBtn = document.getElementById('generate-btn');
+            const questionsError = document.getElementById('questions-error');
+
+            addQuestionBtn.addEventListener('click', () => {
+                const newQ = questionsContainer.children[0].cloneNode(true);
+                newQ.classList.add('new-item');
+                newQ.querySelectorAll('input').forEach(i => i.value = '');
+                const qHeader = newQ.querySelector('.flex.items-center');
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 hover:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+                removeBtn.className = 'remove-question-btn p-1 ml-auto';
+                removeBtn.onclick = () => {
+                    if (questionsContainer.children.length > 1) newQ.remove();
+                };
+                qHeader.appendChild(removeBtn);
+                questionsContainer.appendChild(newQ);
+            });
+
+            questionsContainer.addEventListener('click', (e) => {
+                if (e.target.closest('.add-answer-btn')) {
+                    const answersContainer = e.target.closest('.add-answer-btn').previousElementSibling;
+                    const newA = answersContainer.children[0].cloneNode(true);
+                    newA.classList.add('new-item');
+                    newA.querySelector('input').value = '';
+                    const removeBtn = document.createElement('button');
+                    removeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 hover:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+                    removeBtn.className = 'remove-answer-btn p-1';
+                    removeBtn.onclick = () => {
+                        if (answersContainer.children.length > 1) newA.remove();
+                    };
+                    newA.appendChild(removeBtn);
+                    answersContainer.appendChild(newA);
+                }
+            });
+
+
+            generateBtn.addEventListener('click', () => {
+                let hasError = false;
+                const finalTeams = [];
+                const finalQuestions = [];
+
+                document.querySelectorAll('#teams-container-creator .team-entry').forEach(entry => {
+                    const name = entry.querySelector('.team-name').value.trim();
+                    const logoUrl = entry.querySelector('.team-logo').value.trim();
+                    if (name) finalTeams.push({
+                        name,
+                        logoUrl
+                    });
+                });
+
+                document.querySelectorAll('#questions-container-creator .question-entry').forEach(qEntry => {
+                    const questionText = qEntry.querySelector('.question-text').value.trim();
+                    const answers = [];
+                    qEntry.querySelectorAll('.answer-text').forEach(aEntry => {
+                        const answerText = aEntry.value.trim();
+                        if (answerText) answers.push({
+                            text: answerText
+                        });
+                    });
+                    if (questionText && answers.length > 0) finalQuestions.push({
+                        question: questionText,
+                        answers
+                    });
+                    else hasError = true;
+                });
+
+                if (hasError || finalTeams.length === 0 || finalQuestions.length === 0) {
+                    questionsError.classList.remove('hidden');
+                    questionsError.textContent = "Please ensure every question and answer field is filled, and you have at least one team.";
+                    return;
+                }
+                questionsError.classList.add('hidden');
+
+                const fullGameData = {
+                    teams: finalTeams,
+                    questions: finalQuestions
+                };
+
+                showModal(
+                    'Save Game',
+                    '<p>Enter a unique ID (like your LDAP/username) to save this game. Anyone with this ID can load the game.</p><input type="text" id="ldap-save-input" class="w-full mt-2 p-2 border rounded-lg" placeholder="e.g., jdoe">',
+                    [{
+                        text: 'Cancel',
+                        onClick: hideModal
+                    }, {
+                        text: 'Save',
+                        classes: 'px-4 py-2 bg-green-500 text-white rounded-lg btn-press',
+                        onClick: () => {
+                            const ldap = document.getElementById('ldap-save-input').value.trim();
+                            if (ldap) saveGameData(ldap, fullGameData);
+                        }
+                    }]
+                );
+                document.getElementById('ldap-save-input').focus();
+            });
+
+        })();
+
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            backgroundMusic.volume = 0.1;
+            rightSound.volume = 0.5;
+            wrongSound.volume = 0.4;
+            drumSound.volume = 0.6;
+            showScreen('main-menu-screen');
+        };
+    </script>
+</body>
+</html>
+
+
